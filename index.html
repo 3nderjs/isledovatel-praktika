@@ -1,40 +1,637 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/webstorm-icon-logo.svg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WS playground</title>
-  <link rel="stylesheet" href="/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Игра "Исследователь"</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #d0e8f2;
+      overflow: hidden;
+    }
+    .screen {
+      display: none;
+      text-align: center;
+      background: linear-gradient(#ffffff, #e6f3fa);
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+      width: 800px;
+      height: 600px;
+      position: relative;
+    }
+    #welcome-screen {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    #welcome-screen input {
+      padding: 12px;
+      margin: 15px;
+      font-size: 18px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    #welcome-screen button, #result-screen button, #game-over-screen button {
+      padding: 12px 25px;
+      font-size: 18px;
+      cursor: pointer;
+      background: #28a745;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      transition: background 0.2s;
+    }
+    #welcome-screen button:hover, #result-screen button:hover, #game-over-screen button:hover {
+      background: #218838;
+    }
+    #welcome-screen button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+      background: #6c757d;
+    }
+    #game-screen {
+      display: none;
+      flex-direction: column;
+    }
+    #game-info {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      align-items: center;
+      font-size: 16px;
+      border-bottom: 2px solid #444;
+    }
+    #power-bar-container {
+      width: 120px;
+      height: 12px;
+      background: #333;
+      border: 2px solid #fff;
+      border-radius: 3px;
+      position: relative;
+      display: inline-block;
+      margin-left: 10px;
+    }
+    #power-bar {
+      height: 100%;
+      background: linear-gradient(#00FF00, #00CC00);
+      width: 50%;
+      border-radius: 2px;
+      transition: width 0.3s, background 0.3s;
+    }
+    #power-bar.low {
+      background: linear-gradient(#FF0000, #CC0000);
+      animation: pulse 1s infinite;
+    }
+    #game-canvas {
+      border: 1px solid #000;
+    }
+    .fade-in {
+      animation: fadeIn 0.7s;
+    }
+    .fade-out {
+      animation: fadeOut 0.7s;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; transform: scale(1); }
+      to { opacity: 0; transform: scale(0.95); }
+    }
+    .collision {
+      animation: shake 0.3s;
+    }
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-7px); }
+      50% { transform: translateX(7px); }
+      75% { transform: translateX(-7px); }
+      100% { transform: translateX(0); }
+    }
+    .battery-glow {
+      animation: glow 0.5s;
+    }
+    @keyframes glow {
+      0% { box-shadow: 0 0 5px #00FF00, 0 0 10px #00FF00; }
+      50% { box-shadow: 0 0 15px #00FF00, 0 0 25px #00FF00; }
+      100% { box-shadow: 0 0 5px #00FF00, 0 0 10px #00FF00; }
+    }
+    .near-miss {
+      animation: nearMiss 0.2s;
+    }
+    @keyframes nearMiss {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+      100% { transform: translateY(0); }
+    }
+    .pulse {
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    .cloud-pulse {
+      animation: cloudPulse 3s infinite;
+    }
+    @keyframes cloudPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+  </style>
 </head>
 <body>
-<header class="logo">
-  <a href="https://www.jetbrains.com/webstorm/">
-    <img src="/webstorm-logo.svg" alt="WebStorm logo" width="344"
-         height="90">
-  </a>
-</header>
-<main id="app">
-  <h1 class="title">
-    Thank you for trying it out. <br /> Your first project is up and running
-    now.
-  </h1>
-  <section class="counter">
-    <div class="counter-info">
-      <p class="counter-text">Counter is</p>
-      <p class="counter-value" id="counter-value"></p>
-    </div>
-    <div class="counter-interaction">
-      <button id="increaseByOne" type="button">+1</button>
-      <button id="increaseByTwo" type="button">+2</button>
-      <button id="decreaseByOne" type="button">-1</button>
-      <button id="decreaseByTwo" type="button">-2</button>
-    </div>
-  </section>
-</main>
-<footer class="technologies">
-  <img src="/technologies.svg" alt="List of supported technologies">
-</footer>
-<script type="module" src="/src/main.js"></script>
+<div id="welcome-screen" class="screen">
+  <h1>Добро пожаловать в "Исследователь"</h1>
+  <input type="text" id="player-name" placeholder="Введите ваше имя">
+  <p style="font-size: 14px; margin: 10px;">Управление: W/Ц (вверх), S/Ы (вниз), ESC (пауза)</p>
+  <button id="start-button" disabled>Начать игру</button>
+</div>
+<div id="game-screen" class="screen">
+  <div id="game-info">
+    <span id="display-name"></span>
+    <span id="timer">00:00</span>
+    <span id="score">Очки: 0</span>
+    <span id="power">Заряд: 50% <div id="power-bar-container"><div id="power-bar"></div></div></span>
+  </div>
+  <canvas id="game-canvas" width="800" height="500"></canvas>
+</div>
+<div id="result-screen" class="screen">
+  <h1>Игра завершена!</h1>
+  <p id="result-name"></p>
+  <p id="result-time"></p>
+  <p id="result-score"></p>
+  <button id="restart-result">Начать заново</button>
+</div>
+<div id="game-over-screen" class="screen">
+  <h1>Игра окончена!</h1>
+  <p>Вы врезались в стену!</p>
+  <button id="restart-game-over">Начать заново</button>
+</div>
+
+<script>
+  $(document).ready(function() {
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    let playerName = '';
+    let gameState = 'welcome';
+    let time = 0;
+    let power = 50;
+    let score = 0;
+    let player = {
+      x: 50,
+      y: canvas.height / 2,
+      width: 25,
+      height: 25,
+      speed: 25,
+      velocity: 0,
+      acceleration: 0.6,
+      maxVelocity: 25,
+      rotation: 0,
+      invincibility: 0
+    };
+    let walls = [];
+    let batteries = [];
+    let clouds = [];
+    let bgOffset = 0;
+    let isPaused = false;
+    let gameLoopInterval;
+    let keys = { up: false, down: false };
+    let difficulty = 1;
+    let wallPatternIndex = 0;
+    const gapPatterns = [
+      { isTop: true, gapY: 150, height: canvas.height - 200 },
+      { isTop: false, gapY: 350, height: canvas.height - 200 },
+      { isTop: true, gapY: 200, height: canvas.height - 250 }, 
+      { isTop: false, gapY: 300, height: canvas.height - 250 }
+    ];
+
+    // Welcome screen
+    $('#player-name').on('input', function() {
+      playerName = $(this).val().trim();
+      $('#start-button').prop('disabled', playerName === '');
+    });
+
+    $('#start-button').click(function() {
+      switchScreen('#welcome-screen', '#game-screen');
+      gameState = 'playing';
+      $('#display-name').text(playerName);
+      startGame();
+    });
+
+    $('#restart-result, #restart-game-over').click(function() {
+      switchScreen($(this).closest('.screen').attr('id'), '#game-screen');
+      resetGame();
+      gameState = 'playing';
+      startGame();
+    });
+
+    // Screen transition
+    function switchScreen(fromId, toId) {
+      $(fromId).addClass('fade-out');
+      setTimeout(() => {
+        $(fromId).hide().removeClass('fade-out');
+        $(toId).show().addClass('fade-in');
+        setTimeout(() => $(toId).removeClass('fade-in'), 700);
+      }, 700);
+    }
+
+    // Game initialization
+    function startGame() {
+      walls = [];
+      batteries = [];
+      clouds = [];
+      bgOffset = 0;
+      time = 0;
+      power = 50;
+      score = 0;
+      player.y = canvas.height / 2;
+      player.velocity = 0;
+      player.rotation = 0;
+      player.invincibility = 0;
+      difficulty = 1;
+      wallPatternIndex = 0;
+      updatePowerBar();
+      updateScore();
+      updateTimer();
+      generateClouds();
+      generateWallsAndBatteries();
+      gameLoopInterval = setInterval(gameLoop, 1000 / 60);
+    }
+
+    function resetGame() {
+      clearInterval(gameLoopInterval);
+      time = 0;
+      power = 50;
+      score = 0;
+      player.y = canvas.height / 2;
+      player.velocity = 0;
+      player.rotation = 0;
+      player.invincibility = 0;
+      difficulty = 1;
+      wallPatternIndex = 0;
+      walls = [];
+      batteries = [];
+      clouds = [];
+      bgOffset = 0;
+      $('#timer').text('00:00');
+      $('#score').text('Очки: 0');
+      $('#power').text('Заряд: 50%');
+      updatePowerBar();
+    }
+
+    // Power bar
+    function updatePowerBar() {
+      $('#power-bar').css('width', `${power}%`);
+      if (power <= 10) {
+        $('#power-bar').addClass('low');
+      } else {
+        $('#power-bar').removeClass('low');
+      }
+    }
+
+    // Score
+    function updateScore() {
+      $('#score').text(`Очки: ${score}`);
+    }
+
+    // Timer
+    function updateTimer() {
+      if (gameState === 'playing' && !isPaused) {
+        time++;
+        const minutes = Math.floor(time / 60);
+        const seconds = time % 60;
+        $('#timer').text(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+        power = Math.max(0, power - 1); // 5% per second
+        score += 1;
+        $('#power').text(`Заряд: ${Math.round(power)}%`);
+        updatePowerBar();
+        if (power <= 0) {
+          endGame();
+        }
+        if (time === 1800) { // 30 seconds
+          difficulty = 1.1;
+        } else if (time === 3600) { // 60 seconds
+          difficulty = 1.2;
+        }
+      }
+      setTimeout(updateTimer, 1000);
+    }
+
+    // Generate clouds
+    function generateClouds() {
+      for (let i = 0; i < 10; i++) {
+        clouds.push({
+          x: Math.random() * (canvas.width + 2000),
+          y: 50 + Math.random() * 100,
+          size: 40 + Math.random() * 40,
+          speed: 0.2 + Math.random() * 0.3,
+          type: Math.random() > 0.5 ? 'fluffy' : 'wispy',
+          pulsePhase: Math.random() * Math.PI * 2
+        });
+      }
+    }
+
+    // Generate walls and batteries
+    function generateWallsAndBatteries() {
+      const interval = 500 / difficulty;
+      for (let x = canvas.width + 100; x < canvas.width + 3000; x += interval) {
+        // Occasionally insert a safe zone (no wall, 10% chance)
+        if (Math.random() < 0.1) {
+          // Safe zone: no wall, chance for battery
+          if (Math.random() > 0.5) { // 50% battery chance
+            const batteryY = 100 + Math.random() * (canvas.height - 200);
+            batteries.push({
+              x: x + 150,
+              y: batteryY,
+              width: 20,
+              height: 20,
+              isLarge: false,
+              collected: false
+            });
+          }
+          continue;
+        }
+        // Select a pattern
+        const pattern = gapPatterns[wallPatternIndex % gapPatterns.length];
+        wallPatternIndex++;
+        const height = pattern.height;
+        walls.push({
+          x: x,
+          y: pattern.isTop ? 0 : canvas.height - height,
+          width: 50,
+          height: height
+        });
+        // Battery (50% chance)
+        if (Math.random() > 0.5) {
+          const safeZoneMin = pattern.isTop ? canvas.height - 100 : 100;
+          const safeZoneMax = pattern.isTop ? canvas.height - 50 : 150;
+          const batteryY = safeZoneMin + Math.random() * (safeZoneMax - safeZoneMin);
+          batteries.push({
+            x: x + 150,
+            y: batteryY,
+            width: 20,
+            height: 20,
+            isLarge: false,
+            collected: false
+          });
+        }
+      }
+    }
+
+    // Game loop
+    function gameLoop() {
+      if (gameState !== 'playing' || isPaused) return;
+
+      // Update player
+      if (keys.up) {
+        player.velocity = Math.max(player.velocity - player.acceleration, -player.maxVelocity);
+        player.rotation = Math.min(player.rotation + 0.05, 0.3);
+      } else if (keys.down) {
+        player.velocity = Math.min(player.velocity + player.acceleration, player.maxVelocity);
+        player.rotation = Math.max(player.rotation - 0.05, -0.3);
+      } else {
+        player.velocity *= 0.92;
+        player.rotation *= 0.9;
+      }
+      player.y = Math.max(0, Math.min(canvas.height - player.height, player.y + player.velocity));
+      if (player.invincibility > 0) {
+        player.invincibility -= 1 / 60;
+      }
+
+      // Update objects
+      const speed = 2.5 * difficulty;
+      bgOffset = (bgOffset + speed) % canvas.width;
+      walls.forEach(wall => wall.x -= speed);
+      batteries.forEach(battery => battery.x -= speed);
+      clouds.forEach(cloud => {
+        cloud.x -= cloud.speed * difficulty;
+        cloud.pulsePhase += 0.02;
+        if (cloud.x + cloud.size < 0) {
+          cloud.x += canvas.width + 2000;
+          cloud.y = 50 + Math.random() * 100;
+          cloud.size = 40 + Math.random() * 40;
+          cloud.type = Math.random() > 0.5 ? 'fluffy' : 'wispy';
+        }
+      });
+
+      walls = walls.filter(wall => wall.x + wall.width > 0);
+      batteries = batteries.filter(battery => battery.x + battery.width > 0);
+
+      if (walls.length === 0 || walls[walls.length - 1].x < canvas.width + 1000) {
+        generateWallsAndBatteries();
+      }
+
+      // Near-miss detection
+      let nearMiss = false;
+      for (let wall of walls) {
+        if (Math.abs(wall.x - (player.x + player.width)) < 20 &&
+                (player.y < wall.y + wall.height && player.y + player.height > wall.y)) {
+          nearMiss = true;
+          break;
+        }
+      }
+      if (nearMiss) {
+        $('#game-canvas').addClass('near-miss');
+        setTimeout(() => $('#game-canvas').removeClass('near-miss'), 200);
+      }
+
+      // Collisions
+      if (player.invincibility <= 0) {
+        for (let wall of walls) {
+          if (checkCollision(player, wall)) {
+            $('#game-canvas').addClass('collision');
+            setTimeout(() => $('#game-canvas').removeClass('collision'), 300);
+            player.invincibility = 0.5;
+            gameOver();
+            return;
+          }
+        }
+      }
+
+      // Battery collection
+      batteries.forEach(battery => {
+        if (!battery.collected && checkCollision(player, battery)) {
+          battery.collected = true;
+          const powerGain = 5; // Only small batteries
+          power = Math.min(100, power + powerGain);
+          score += 25;
+          $('#power').text(`Заряд: ${Math.round(power)}%`).animate({ fontSize: '20px' }, 100, function() {
+            $(this).animate({ fontSize: '16px' }, 100);
+          });
+          updatePowerBar();
+          updateScore();
+          $('#power-bar').addClass('battery-glow');
+          setTimeout(() => $('#power-bar').removeClass('battery-glow'), 500);
+        }
+      });
+
+      draw();
+    }
+
+    // Collision detection
+    function checkCollision(a, b) {
+      return a.x < b.x + b.width &&
+              a.x + a.width > b.x &&
+              a.y < b.y + b.height &&
+              a.y + a.height > b.y;
+    }
+
+    // Draw game elements
+    function draw() {
+      // Gradient sky
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, '#87CEEB');
+      gradient.addColorStop(1, '#4682B4');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Horizon
+      ctx.fillStyle = '#2F4F4F';
+      ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+
+      // Stars
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      for (let i = 0; i < 20; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * (canvas.height - 50);
+        ctx.fillRect(x, y, 2, 2);
+      }
+
+      // Clouds
+      clouds.forEach(cloud => {
+        ctx.save();
+        ctx.translate(cloud.x, cloud.y);
+        const pulse = 1 + 0.05 * Math.sin(cloud.pulsePhase);
+        ctx.scale(pulse, pulse);
+        if (cloud.type === 'fluffy') {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+          ctx.beginPath();
+          ctx.ellipse(0, 0, cloud.size, cloud.size * 0.6, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+          ctx.beginPath();
+          ctx.ellipse(-cloud.size * 0.4, cloud.size * 0.2, cloud.size * 0.7, cloud.size * 0.4, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+          ctx.beginPath();
+          ctx.ellipse(cloud.size * 0.4, -cloud.size * 0.2, cloud.size * 0.6, cloud.size * 0.3, 0, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+          ctx.beginPath();
+          ctx.ellipse(0, 0, cloud.size * 1.2, cloud.size * 0.4, Math.PI / 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+          ctx.beginPath();
+          ctx.ellipse(-cloud.size * 0.3, cloud.size * 0.1, cloud.size * 0.8, cloud.size * 0.3, Math.PI / 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      });
+
+      // Player
+      ctx.save();
+      ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
+      ctx.rotate(player.rotation);
+      ctx.fillStyle = player.invincibility > 0 ? 'rgba(255, 215, 0, 0.5)' : '#FFD700';
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.rect(-player.width / 2, -player.height / 2, player.width, player.height);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#666';
+      ctx.beginPath();
+      ctx.arc(-10, -10, 5, 0, Math.PI * 2);
+      ctx.arc(10, -10, 5, 0, Math.PI * 2);
+      ctx.arc(-10, 10, 5, 0, Math.PI * 2);
+      ctx.arc(10, 10, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Walls
+      ctx.fillStyle = '#8B4513';
+      ctx.strokeStyle = '#5C4033';
+      ctx.lineWidth = 1;
+      walls.forEach(wall => {
+        ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+        for (let y = wall.y; y < wall.y + wall.height; y += 20) {
+          for (let x = wall.x; x < wall.x + wall.width; x += 30) {
+            ctx.strokeRect(x, y, 30, 20);
+          }
+        }
+      });
+
+      // Batteries
+      batteries.forEach(battery => {
+        if (!battery.collected) {
+          ctx.fillStyle = '#00CC00';
+          ctx.beginPath();
+          ctx.rect(battery.x, battery.y, battery.width, battery.height);
+          ctx.fill();
+          ctx.strokeStyle = '#00FF00';
+          ctx.stroke();
+        }
+      });
+    }
+
+    // End game
+    function endGame() {
+      clearInterval(gameLoopInterval);
+      gameState = 'result';
+      $('#result-name').text(`Игрок: ${playerName}`);
+      $('#result-time').text(`Время полета: ${$('#timer').text()}`);
+      $('#result-score').text(`Очки: ${score}`);
+      switchScreen('#game-screen', '#result-screen');
+    }
+
+    // Game over
+    function gameOver() {
+      clearInterval(gameLoopInterval);
+      gameState = 'game-over';
+      switchScreen('#game-screen', '#game-over-screen');
+    }
+
+    // Keyboard controls
+    $(document).keydown(function(e) {
+      if (gameState !== 'playing') return;
+      if (e.key === 'w' || e.key === 'W' || e.key === 'ц' || e.key === 'Ц') {
+        keys.up = true;
+      }
+      if (e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы') {
+        keys.down = true;
+      }
+      if (e.key === 'Escape') {
+        isPaused = !isPaused;
+      }
+    });
+
+    $(document).keyup(function(e) {
+      if (e.key === 'w' || e.key === 'W' || e.key === 'ц' || e.key === 'Ц') {
+        keys.up = false;
+      }
+      if (e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы') {
+        keys.down = false;
+      }
+    });
+
+    $('#welcome-screen').show();
+  });
+</script>
 </body>
 </html>
